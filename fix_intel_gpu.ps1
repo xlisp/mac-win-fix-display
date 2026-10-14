@@ -30,6 +30,7 @@ Get-ChildItem "$env:WINDIR\INF\oem*.inf" | ForEach-Object {
             pnputil /delete-driver $_.Name /uninstall /force
         } else {
             Write-Host "Keeping  $($_.Name) (Apple $ver)" -ForegroundColor Green
+            $script:GoodInf = $_.Name
         }
     }
 }
@@ -56,6 +57,10 @@ if ($gpu.DriverVersion -eq $GoodVer) {
     New-ItemProperty -Path $list -Name '1' -Value $DevId -PropertyType String -Force | Out-Null
     Write-Host 'GPU driver LOCKED. Nothing can replace it now. (undo: run with -Unlock)' -ForegroundColor Green
 } else {
+    if ($script:GoodInf -and -not (Get-CimInstance Win32_ComputerSystem).BootupState.Contains('Fail-safe')) {
+        Write-Host "Installing Apple driver $script:GoodInf ..." -ForegroundColor Yellow
+        pnputil /add-driver "$env:WINDIR\INF\$script:GoodInf" /install
+    }
     Write-Host 'Apple driver not active yet -> reboot normally, then run this script again to lock.' -ForegroundColor Yellow
 }
 Read-Host 'Done. Press Enter'
