@@ -80,7 +80,11 @@ fix_intel_gpu.cmd -Unlock  解除显卡锁定（以后想自己换驱动时用�
 3. 重复第 1–2 步，**共 2～3 次**。下一次启动时会显示“**正在准备自动修复**”或“**自动修复**”。这个界面用的是基本显示驱动，**不会黑屏**。
 4. 依次点：**高级选项 → 疑难解答 → 高级选项 → 启动设置 → 重启**。
 5. 重启后会出现编号菜单，按 **4**（安全模式）或 **5**（带网络连接的安全模式）。
-6. 用**密码**登录，插上 U 盘，双击 `fix_intel_gpu.cmd`，在权限确认窗口点“是”。
+6. 用**密码**登录，插上 U 盘，**右键** `fix_intel_gpu.cmd` → **以管理员身份运行**（直接双击也行）。
+   - 如果脚本还是不正常，可以绕开 `.cmd`，直接运行 `.ps1`：右键开始菜单 → **Windows PowerShell（管理员）**，输入下面这行（`E:` 换成 U 盘的盘符）：
+     ```
+     powershell -ExecutionPolicy Bypass -File E:\fix_intel_gpu.ps1
+     ```
    - 红字 `Removing oemXX.inf (Intel 20.19...)` 表示坏驱动已删除；
    - 黄字 `Apple driver not active yet` 是正常的，因为安全模式下不加载显卡驱动。
 7. **正常重启**进 Windows，屏幕应该能正常显示了。
@@ -138,6 +142,11 @@ Get-ItemProperty 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeviceInstall\Restri
 ---
 
 ## 6. 常见问题
+
+**Q：双击 `fix_intel_gpu.cmd` 后终端窗口一直闪、关不掉，电脑也没法操作？**
+这是旧版脚本的 bug，**已修复**。旧版用 `net session` 判断有没有管理员权限，但这个命令依赖的 Server 服务在安全模式下不启动，结果判断永远失败，脚本就不停地以管理员身份重新启动自己。
+- 遇到这种情况，**长按电源键 5 秒强制关机**即可。修复脚本本体（`.ps1`）根本没跑起来，系统**没有被修改**。
+- 新版改用 `fltmc` 判断权限（安全模式下也能用），而且最多只重新启动一次，不会再死循环。请把新版的 `fix_intel_gpu.cmd` 重新拷到 U 盘。
 
 **Q：Apple 驱动（oem5.inf）也被删了怎么办？**
 在 macOS 里打开“**启动转换助理**”，菜单栏选 **操作 → 下载 Windows 支持软件**，把下载的 `WindowsSupport` 文件夹拷到 U 盘。进 Windows 后运行里面的 `BootCamp\Setup.exe`，或者在设备管理器里把驱动路径指向这个文件夹。装好后再运行一次脚本锁定。
